@@ -33,7 +33,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import android.widget.*
 import com.amaze.filemanager.GlideApp
 import com.amaze.filemanager.R
 import com.amaze.filemanager.adapters.AppsAdapter
@@ -41,7 +41,6 @@ import com.amaze.filemanager.adapters.data.AppDataParcelable
 import com.amaze.filemanager.adapters.data.OpenFileParcelable
 import com.amaze.filemanager.adapters.glide.AppsAdapterPreloadModel
 import com.amaze.filemanager.application.AppConfig
-import com.amaze.filemanager.databinding.FragmentOpenFileDialogBinding
 import com.amaze.filemanager.filesystem.files.FileUtils
 import com.amaze.filemanager.ui.activities.MainActivity
 import com.amaze.filemanager.ui.activities.superclasses.BasicActivity
@@ -60,12 +59,18 @@ class OpenFileDialogFragment : BaseBottomSheetFragment() {
     private var uri: Uri? = null
     private var mimeType: String? = null
     private var useNewStack: Boolean? = null
-    private var fragmentOpenFileDialogBinding: FragmentOpenFileDialogBinding? = null
-    private val viewBinding get() = fragmentOpenFileDialogBinding!!
 
     private lateinit var adapter: AppsAdapter
     private lateinit var utilsProvider: UtilitiesProvider
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var rootView: View
+    private lateinit var appsListView: ListView
+    private lateinit var lastAppTitle: TextView
+    private lateinit var lastAppImage: ImageView
+    private lateinit var openAsButton: ImageButton
+    private lateinit var alwaysButton: TextView
+    private lateinit var justOnceButton: TextView
+    private lateinit var chooseDifferentAppTextView: TextView
 
     companion object {
 
@@ -266,14 +271,16 @@ class OpenFileDialogFragment : BaseBottomSheetFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        fragmentOpenFileDialogBinding = FragmentOpenFileDialogBinding.inflate(inflater)
-        initDialogResources(viewBinding.parent)
-        return viewBinding.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        fragmentOpenFileDialogBinding = null
+        rootView = layoutInflater.inflate(R.layout.fragment_open_file_dialog, container, false)
+        appsListView = rootView.findViewById(R.id.apps_list_view)
+        lastAppTitle = rootView.findViewById(R.id.last_app_title)
+        lastAppImage = rootView.findViewById(R.id.last_app_image)
+        openAsButton = rootView.findViewById(R.id.open_as_button)
+        alwaysButton = rootView.findViewById(R.id.always_button)
+        justOnceButton = rootView.findViewById(R.id.just_once_button)
+        chooseDifferentAppTextView = rootView.findViewById(R.id.choose_different_app_text_view)
+        initDialogResources(rootView)
+        return rootView
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -314,7 +321,7 @@ class OpenFileDialogFragment : BaseBottomSheetFragment() {
             }
         )
         loadViews(lastAppData)
-        viewBinding.appsListView.setOnScrollListener(preloader)
+        appsListView.setOnScrollListener(preloader)
     }
 
     override fun onPause() {
@@ -332,29 +339,27 @@ class OpenFileDialogFragment : BaseBottomSheetFragment() {
                 it.openFileParcelable.packageName
             )
 
-            viewBinding.run {
-                appsListView.adapter = adapter
-                lastAppTitle.text = it.label
-                lastAppImage.setImageDrawable(
-                    (activity as MainActivity).packageManager.getApplicationIcon(it.packageName)
-                )
-                justOnceButton.setTextColor((activity as ThemedActivity).accent)
-                justOnceButton.setOnClickListener { _ ->
-                    setLastOpenedApp(it, activity as PreferenceActivity)
-                    requireContext().startActivity(lastAppIntent)
-                }
-                alwaysButton.setTextColor((activity as ThemedActivity).accent)
-                alwaysButton.setOnClickListener { _ ->
-                    setDefaultOpenedApp(it, activity as PreferenceActivity)
-                    requireContext().startActivity(lastAppIntent)
-                }
-                openAsButton.setOnClickListener {
-                    FileUtils.openWith(uri, activity as PreferenceActivity, useNewStack!!)
-                    dismiss()
-                }
-                ThemedTextView.setTextViewColor(lastAppTitle, requireContext())
-                ThemedTextView.setTextViewColor(chooseDifferentAppTextView, requireContext())
+            appsListView.adapter = adapter
+            lastAppTitle.text = it.label
+            lastAppImage.setImageDrawable(
+                (activity as MainActivity).packageManager.getApplicationIcon(it.packageName)
+            )
+            justOnceButton.setTextColor((activity as ThemedActivity).accent)
+            justOnceButton.setOnClickListener { _ ->
+                setLastOpenedApp(it, activity as PreferenceActivity)
+                requireContext().startActivity(lastAppIntent)
             }
+            alwaysButton.setTextColor((activity as ThemedActivity).accent)
+            alwaysButton.setOnClickListener { _ ->
+                setDefaultOpenedApp(it, activity as PreferenceActivity)
+                requireContext().startActivity(lastAppIntent)
+            }
+            openAsButton.setOnClickListener {
+                FileUtils.openWith(uri, activity as PreferenceActivity, useNewStack!!)
+                dismiss()
+            }
+            ThemedTextView.setTextViewColor(lastAppTitle, requireContext())
+            ThemedTextView.setTextViewColor(chooseDifferentAppTextView, requireContext())
         }
     }
 

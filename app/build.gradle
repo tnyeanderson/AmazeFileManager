@@ -56,10 +56,6 @@ android {
         }
     }
 
-    buildFeatures {
-        viewBinding true
-    }
-
     androidExtensions {
         features = ["parcelize"]
     }
